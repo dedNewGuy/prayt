@@ -52,8 +52,6 @@ float date_to_jd(int year, int month, int day)
 
 astro_const_t init_astro_constant(double jd)
 {
-
-
 	astro_const_t astro_const;
 
 	/* the number of days and fraction (+ or –) from the epoch referred to as
@@ -64,27 +62,30 @@ astro_const_t init_astro_constant(double jd)
 
 	log("%f", "D", D);
 	
-	double g = 357.529 + 0.98560028 * D;
-	double q = 280.459 + 0.98564736 * D;
-	double L = q + 1.915
-		* to_degrees(sin(g)) + 0.020 * to_degrees(sin(2 * g));
+	double g = fmod(357.529 + 0.98560028 * D, 360);
+	double q = fmod(280.459 + 0.98564736 * D, 360);
+
+	double L = fmod(q + 1.915 * to_degrees(sin(to_radians(g))) + 0.020 * to_degrees(sin(to_radians(2 * g))), 360);
 
 	log("%f", "g", g);
 	log("%f", "q", q);
 	log("%f", "L", L);
 	
-	double e = 23.439 - 0.00000036 * D;
+	double e = fmod(23.439 - 0.00000036 * D, 360);
 
 	log("%f", "e", e);
 
-	double kos_e = cos(e);
-	double sin_e = sin(e);
-	double sin_l = sin(L);
-	double kos_l = cos(L);
+	double kos_e = cos(to_radians(e));
+	double sin_e = sin(to_radians(e));
+	double sin_l = sin(to_radians(L));
+	double kos_l = cos(to_radians(L));
 	double sun_right_ascen = to_degrees(atan2(kos_e * sin_l, kos_l));
 	double declination = to_degrees(asin(sin_e * sin_l));
 
-	double ra_in_hours = sun_right_ascen / 15;
+	double ra_in_hours = (sun_right_ascen / 15);
+
+	log("%f", "RA IN HOURS", ra_in_hours);
+	
 	double eqt_of_time = q / 15 - ra_in_hours;
 
 	astro_const.sun_declination = declination;
