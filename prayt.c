@@ -20,6 +20,15 @@ typedef struct {
 float date_to_jd(int year, int month, int day);
 astro_const_t init_astro_constant(double jd);
 
+typedef struct {
+    int hours;
+    int minutes;
+} metime_t;
+
+metime_t to_civil_time(double hours);
+
+/* Get Approx Prayer Time */
+double dhuhr(double lon, double eqT, double loc_time_zone);
 
 int main()
 {
@@ -33,8 +42,18 @@ int main()
 
 	astro_const_t astro_const = init_astro_constant((double)jd);
 
+	
 	log("%f", "EqT", astro_const.eq_of_time);
 	log("%f", "Sun Decline", astro_const.sun_declination);
+
+	double zuhur = dhuhr(101.7099999, astro_const.eq_of_time, 8);
+
+	log("%f", "Zuhur", zuhur);
+
+	metime_t metime = to_civil_time(zuhur);
+
+	printf("------ PRAYER TIME -------\n");
+	printf("Zuhur: %d:%d\n", metime.hours, metime.minutes);
 
 	return 0;
 }
@@ -45,8 +64,10 @@ int main()
  */
 float date_to_jd(int year, int month, int day)
 {
-    float jd = (int)367*year-(7*(year+(month+9)/12))/4+(275*month)/9+day+1721013.5f+12/24;
-    return roundf(jd);
+    float second_last_exp = (100 * year) + month - 190002.5;
+    float jd = (int)367*year-(7*(year+(month+9)/12))/4+(275*month)/9+day+1721013.5f+12/24
+	- 0.5 * (second_last_exp / second_last_exp) + 0.5;
+    return jd;
 }
 
 
@@ -82,7 +103,9 @@ astro_const_t init_astro_constant(double jd)
 	double sun_right_ascen = to_degrees(atan2(kos_e * sin_l, kos_l));
 	double declination = to_degrees(asin(sin_e * sin_l));
 
-	double ra_in_hours = (sun_right_ascen / 15);
+	log("%f", "RA BFORE DIV", sun_right_ascen);
+
+	double ra_in_hours = fmod(sun_right_ascen / 15, 24);
 
 	log("%f", "RA IN HOURS", ra_in_hours);
 	
@@ -94,3 +117,25 @@ astro_const_t init_astro_constant(double jd)
 	return astro_const;
 }
 
+double dhuhr(double lon, double eqT, double loc_time_zone)
+{
+    return 12.0 + loc_time_zone - (lon / 15) - (eqT / 60);
+}
+
+metime_t to_civil_time(double hours)
+{
+    metime_t metime;
+
+    int le_hours = (int)hours;
+
+    log("%d", "HOURS", le_hours);
+
+    double le_rest = hours - (double)le_hours;
+    double minutes = le_rest * 60;
+    log("%f", "MINUTE", minutes);
+
+    metime.hours = le_hours;
+    metime.minutes = minutes;
+
+    return metime;
+}
