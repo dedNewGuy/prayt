@@ -36,6 +36,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     printf(format, __VA_ARGS__);		\
     printf("\n");				\
 
+#define m_to_h(m)				\
+    m / 60;					\
+
 typedef struct {
 	double eq_of_time;
 	double sun_declination;
@@ -51,13 +54,16 @@ typedef struct {
 
 metime_t to_civil_time(double hours);
 
+double wiki_eq_of_time(double D);
+double wiki_D(int year, int days_since_jan);
+
 /* Get Approx Prayer Time */
 double dhuhr(double lon, double eqT, double loc_time_zone);
 
 int main()
 {
 
-	float jd = date_to_jd(2025, 6, 25);
+	float jd = date_to_jd(2025, 6, 28);
 	log("%f", "JD", jd);
 
 	/* Just testing to see if macros works */
@@ -65,12 +71,15 @@ int main()
 	/* log("%f", "TEST", to_radians(90.0)); */
 
 	astro_const_t astro_const = init_astro_constant((double)jd);
-
 	
 	log("%f", "EqT", astro_const.eq_of_time);
 	log("%f", "Sun Decline", astro_const.sun_declination);
 
-	double zuhur = dhuhr(101.7099999, astro_const.eq_of_time, 8);
+	double wikiD = wiki_D(2025, 178);
+	double wiki_eqT = m_to_h(wiki_eq_of_time(wikiD));
+	log("%f", "WIKI EQT", wiki_eqT);
+
+	double zuhur = dhuhr(101.68685500, wiki_eqT, 8);
 
 	log("%f", "Zuhur", zuhur);
 
@@ -80,6 +89,18 @@ int main()
 	printf("Zuhur: %d:%d\n", metime.hours, metime.minutes);
 
 	return 0;
+}
+
+double wiki_D(int year, int days_since_jan)
+{
+    return 6.24004077 + 0.01720197 * (365.25 * (year - 2000) + days_since_jan);
+}
+
+double wiki_eq_of_time(double D)
+{
+    double time = -7.659 * to_degrees(sin(to_radians(D)))
+	+ 9.863 * to_degrees(sin(to_radians(2 * D + 3.5932)));
+    return time;
 }
 
 /**
@@ -143,10 +164,10 @@ astro_const_t init_astro_constant(double jd)
 
 double dhuhr(double lon, double eqT, double loc_time_zone)
 {
-    return 12.0 + loc_time_zone - (lon / 15) - (eqT / 60);
+    return 12.0 + loc_time_zone - (lon / 15) - eqT / 60;
 }
 
-metime_t to_civil_time(double hours)
+Metime_t to_civil_time(double hours)
 {
     metime_t metime;
 
